@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ARM Assembly 32-bit Cheat Sheet</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background-color: #000;
+      color: #33FF33;
+      padding: 20px;
+    }
+    h1, h2, h3 {
+      color: #00FF00;
+      white-space: pre;
+    }
+    code, pre {
+      font-family: 'Courier New', monospace;
+      background-color: #111;
+      color: #33FF33;
+    }
+    pre {
+      padding: 10px;
+      border: 1px solid #33FF33;
+      border-radius: 5px;
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+      color: #33FF33;
+    }
+    th, td {
+      border: 1px solid #33FF33;
+      padding: 8px;
+      text-align: left;
+    }
+    th {
+      background-color: #111;
+    }
+    a {
+      color: #00FFFF;
+    }
+    .btn-link {
+      display: inline-block;
+      margin: 20px 0;
+      padding: 8px 16px;
+      border: 1px solid #33FF33;
+      color: #33FF33;
+      background-color: #111;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .btn-link:hover {
+      background-color: #222;
+    }
+  </style>
+</head>
+<body>
+  <h1>ARM Assembly (32-bit) Cheat Sheet</h1>
+
+  <a href="index.html" class="btn-link">← Back to Syscall Reference</a>
+
+  <h2>+----------------------+
+| Common Sections      |
++----------------------+</h2>
+  <pre><code>.section .text       ; Executable code
+.section .data       ; Initialized global variables
+.section .bss        ; Block Started by Symbol (uninitialized data)
+.space N             ; Reserve N bytes of space (used in .data or .bss)
+.skip N              ; Alias for .space in GNU assembler</code></pre>
+
+  <h2>+----------------+
+| Registers      |
++----------------+</h2>
+  <table>
+    <tr><th>Register</th><th>Usage</th></tr>
+    <tr><td>R0–R3</td><td>Arguments, scratch</td></tr>
+    <tr><td>R4–R11</td><td>Callee-saved</td></tr>
+    <tr><td>R12</td><td>Scratch</td></tr>
+    <tr><td>R13 (SP)</td><td>Stack Pointer</td></tr>
+    <tr><td>R14 (LR)</td><td>Return Address</td></tr>
+    <tr><td>R15 (PC)</td><td>Program Counter</td></tr>
+  </table>
+
+  <h2>+----------------------+
+| Arithmetic & Logic   |
++----------------------+</h2>
+  <pre><code>ADD  R0, R1, #5       ; R0 = R1 + 5
+ADDS R0, R1, R2       ; Same as ADD, updates flags
+SUB  R0, R1, R2       ; R0 = R1 - R2
+SUBS R0, R1, R2       ; Same as SUB, updates flags
+MOV  R0, #10          ; R0 = 10
+MUL  R0, R1, R2       ; R0 = R1 * R2
+AND  R0, R1, R2       ; R0 = R1 AND R2
+ORR  R0, R1, R2       ; R0 = R1 OR R2
+EOR  R0, R1, R2       ; R0 = R1 XOR R2
+MVN  R0, R1           ; R0 = NOT R1
+RSB  R0, R1, #0       ; R0 = -R1 (Reverse subtract)</code></pre>
+
+  <h2>+--------------------------+
+| Comparison & Branching   |
++--------------------------+</h2>
+  <pre><code>CMP R0, #10          ; Compare R0 with 10 (sets flags)
+CMN R0, R1           ; Compare Negative (R0 + R1)
+TST R0, R1           ; Bitwise AND test (no result, sets flags)
+TEQ R0, R1           ; Bitwise XOR test (no result, sets flags)
+
+BEQ label            ; Branch if equal (Z=1)
+BNE label            ; Branch if not equal (Z=0)
+BGT label            ; Branch if greater than (signed)
+BLT label            ; Branch if less than (signed)
+BGE label            ; Branch if >= (signed)
+BLE label            ; Branch if <= (signed)
+B label              ; Unconditional branch</code></pre>
+
+  <h2>+---------+
+| Shifts  |
++---------+</h2>
+  <pre><code>LSL R1, R0, #2        ; Logical shift left (multiply by 4)
+LSR R1, R0, #2        ; Logical shift right (unsigned divide by 4)
+ASR R1, R0, #2        ; Arithmetic shift right (signed divide by 4)
+ROR R1, R0, #4        ; Rotate right by 4 bits</code></pre>
+
+  <h2>+------------------+
+| Memory Access    |
++------------------+</h2>
+  <pre><code>LDR R0, =label            ; Load address of label into R0
+LDR R1, [R0]              ; Load value at address in R0
+STR R1, [R0]              ; Store value in R1 to address in R0
+LDR R2, [R0, R1, LSL #2]  ; Load arr[i] where R1 is index</code></pre>
+
+  <h2>+---------------------+
+| Stack Operations     |
++---------------------+</h2>
+  <pre><code>PUSH {R4, R5, LR}         ; Save registers to stack
+POP {R4, R5, LR}          ; Restore from stack
+STMFD SP!, {R0-R3}        ; Store multiple full descending
+LDMFD SP!, {R0-R3}        ; Load multiple full descending</code></pre>
+
+  <h2>+-----------------+
+| Loop Example    |
++-----------------+</h2>
+  <pre><code>MOV R0, #0                  ; i = 0
+LDR R1, =myarr             ; Load address of array
+loop:
+    CMP R0, #5             ; Compare i with 5
+    BGE end                ; Exit if i >= 5
+    LDR R2, [R1, R0, LSL #2] ; Load myarr[i] into R2
+    ; Do something with R2
+    ADD R0, R0, #1         ; i++
+    B loop
+end:</code></pre>
+
+  <h2>+--------------------------+
+| Complex Example: Copy     |
++--------------------------+</h2>
+  <pre><code>.section .data
+source:  .word 11, 22, 33, 44, 55
+
+.section .bss
+copy:    .space 20          ; Reserve space for 5 words
+
+.section .text
+.global _start
+_start:
+    LDR R0, =source        ; R0 = src address
+    LDR R1, =copy          ; R1 = dst address
+    MOV R2, #5             ; counter = 5
+
+loop_copy:
+    CMP R2, #0
+    BEQ done
+    LDR R3, [R0], #4       ; R3 = *R0; R0 += 4
+    STR R3, [R1], #4       ; *R1 = R3; R1 += 4
+    SUB R2, R2, #1
+    B loop_copy
+
+done:
+    MOV R7, #1             ; exit
+    MOV R0, #0
+    SWI 0</code></pre>
+
+  <h2>+------------------------+
+| Print String (Linux)   |
++------------------------+</h2>
+  <pre><code>.data
+msg: .asciz "Hello, ARM!\\n"
+.text
+.global _start
+_start:
+    LDR R0, =msg       ; pointer to message
+    MOV R1, R0         ; arg1: message
+    MOV R2, #12        ; arg2: message length
+    MOV R7, #4         ; syscall: write
+    MOV R0, #1         ; file descriptor: stdout
+    SWI 0              ; perform syscall
+    MOV R7, #1         ; syscall: exit
+    MOV R0, #0         ; exit code
+    SWI 0</code></pre>
+
+
+
+  <h2>+------------+
+| Flag Codes |
++------------+</h2>
+  <table>
+    <tr><th>Flag</th><th>Meaning</th></tr>
+    <tr><td>Z</td><td>Zero (result == 0)</td></tr>
+    <tr><td>N</td><td>Negative</td></tr>
+    <tr><td>C</td><td>Carry (unsigned overflow)</td></tr>
+    <tr><td>V</td><td>Overflow (signed)</td></tr>
+  </table>
+
+</body>
+</html>
